@@ -287,7 +287,7 @@ export default function CustomerPage() {
         <table className="min-w-full text-xs">
           <thead className="bg-muted">
             <tr>
-              {/* Product columns */}
+              {/* Static product columns */}
               <th className="border border-border px-2 py-1">Item Code</th>
               <th className="border border-border px-2 py-1">Description</th>
               <th className="border border-border px-2 py-1">Grade</th>
@@ -295,31 +295,31 @@ export default function CustomerPage() {
               <th className="border border-border px-2 py-1">Unit Price</th>
               <th className="border border-border px-2 py-1">Units/Case</th>
               <th className="border border-border px-2 py-1">Case Price</th>
-
-              {/* Either ORDER/TOTAL or latest dates */}
-              {showNewOrder ? (
+              {/* Always show past 3 dates */}
+              {latestOrders.map((o) => (
+                <th key={o.id} className="border border-border px-2 py-1 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{o.order_date}</span>
+                    <button
+                      type="button"
+                      className="text-[10px] border px-1 py-0.5 rounded hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => deleteOrder(o.id)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </th>
+              ))}
+              {/* Append New Order columns only in create mode */}
+              {showNewOrder && (
                 <>
                   <th className="border border-border px-2 py-1 text-center">Order</th>
                   <th className="border border-border px-2 py-1 text-right">Total</th>
                 </>
-              ) : (
-                latestOrders.map((o) => (
-                  <th key={o.id} className="border border-border px-2 py-1 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <span>{o.order_date}</span>
-                      <button
-                        type="button"
-                        className="text-[10px] border border-border px-1 py-0.5 rounded hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => deleteOrder(o.id)}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </th>
-                ))
               )}
             </tr>
           </thead>
+
           <tbody>
             {products.map((p) => {
               const qty = Number(newQuantities[p.id] || 0);
@@ -327,6 +327,7 @@ export default function CustomerPage() {
 
               return (
                 <tr key={p.id} className="hover:bg-muted/50">
+                  {/* FIXED PRODUCT COLUMNS */}
                   <td className="border border-border px-2 py-1">{p.item_code}</td>
                   <td className="border border-border px-2 py-1">{p.description}</td>
                   <td className="border border-border px-2 py-1">{p.grade}</td>
@@ -340,34 +341,32 @@ export default function CustomerPage() {
                   <td className="border border-border px-2 py-1 text-right">
                     {Number(p.case_price).toFixed(2)}
                   </td>
-
-                  {showNewOrder ? (
+                  {/* ALWAYS SHOW HISTORY FIRST → MATCHES THEAD */}
+                  {latestOrders.map((o) => {
+                    const q = historyGrid[p.id]?.[o.order_date] ?? "";
+                    return (
+                      <td
+                        key={o.id}
+                        className="border border-border px-2 py-1 text-center align-middle"
+                      >
+                        {q}
+                      </td>
+                    );
+                  })}
+                  {/* ONLY THEN SHOW NEW ORDER COLUMNS */}
+                  {showNewOrder && (
                     <>
                       <td className="border border-border px-2 py-1 text-center">
                         <input
                           className="w-16 border border-input rounded px-1 py-0.5 text-center bg-background text-foreground"
                           value={newQuantities[p.id] || ""}
-                          onChange={(e) =>
-                            handleQtyChange(p.id, e.target.value)
-                          }
+                          onChange={(e) => handleQtyChange(p.id, e.target.value)}
                         />
                       </td>
                       <td className="border border-border px-2 py-1 text-right">
                         {lineTotal > 0 ? lineTotal.toFixed(2) : ""}
                       </td>
                     </>
-                  ) : (
-                    latestOrders.map((o) => {
-                      const q = historyGrid[p.id]?.[o.order_date] ?? "";
-                      return (
-                        <td
-                          key={o.id}
-                          className="border border-border px-2 py-1 text-center align-middle"
-                        >
-                          {q}
-                        </td>
-                      );
-                    })
                   )}
                 </tr>
               );
