@@ -36,6 +36,13 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newCustomer, setNewCustomer] = useState({
+    customer_name: "",
+    email: "",
+    phone: "",
+  });
+  const [addingCustomer, setAddingCustomer] = useState(false);
+  const [customerError, setCustomerError] = useState(null);
 
   // ---------- LOAD ALL DATA ----------
 
@@ -215,6 +222,40 @@ export default function DashboardPage() {
   }, [recentOrders, items, prodMap, custMap]);
 
   // ---------- RENDER ----------
+
+  async function handleAddCustomer(e) {
+    e.preventDefault();
+    setCustomerError(null);
+
+    if (!newCustomer.customer_name.trim()) {
+      setCustomerError("Customer name is required");
+      return;
+    }
+
+    setAddingCustomer(true);
+
+    const { error } = await supabase.from("customers").insert([
+      {
+        customer_name: newCustomer.customer_name.trim(),
+        email: newCustomer.email || null,
+        phone: newCustomer.phone || null,
+      },
+    ]);
+
+    if (error) {
+      setCustomerError(error.message);
+      setAddingCustomer(false);
+      return;
+    }
+
+    // Refresh customers list
+    const { data: custs } = await supabase.from("customers").select("*");
+    setCustomers(custs || []);
+
+    // Reset form
+    setNewCustomer({ customer_name: "", email: "", phone: "" });
+    setAddingCustomer(false);
+  }
 
   if (loading) {
     return <div className="p-6">Loading dashboard...</div>;
@@ -410,4 +451,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
 

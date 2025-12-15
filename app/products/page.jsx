@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function ProductsPage() {
@@ -24,6 +24,18 @@ export default function ProductsPage() {
       p.description.toLowerCase().includes(q)
     );
   });
+
+  const productsByCategory = useMemo(() => {
+    const map = {};
+
+    filteredProducts.forEach((p) => {
+      const category = p.category || "Uncategorized";
+      if (!map[category]) map[category] = [];
+      map[category].push(p);
+    });
+
+    return map;
+  }, [filteredProducts]);
 
   return (
     <div className="p-6 space-y-4">
@@ -51,25 +63,38 @@ export default function ProductsPage() {
               <th className="border border-border px-2 py-1 text-right">Case Price</th>
             </tr>
           </thead>
-          <tbody>
-            {filteredProducts.map((p) => (
+      <tbody>
+        {Object.entries(productsByCategory).map(([category, items]) => (
+          <React.Fragment key={category}>
+            {/* CATEGORY HEADER */}
+            <tr>
+              <td
+                colSpan={7}
+                className="bg-muted font-semibold text-sm px-3 py-2 border border-border"
+              >
+                {category}
+              </td>
+            </tr>
+
+            {/* PRODUCTS */}
+            {items.map((p) => (
               <tr key={p.id} className="hover:bg-muted/50">
-                <td className="border border-border px-2 py-1">{p.item_code}</td>
-                <td className="border border-border px-2 py-1">{p.description}</td>
-                <td className="border border-border px-2 py-1">{p.grade}</td>
-                <td className="border border-border px-2 py-1">{p.ml}</td>
-                <td className="border border-border px-2 py-1 text-right">
-                  {Number(p.unit_price).toFixed(2)}
+                <td className="border px-2 py-1">{p.item_code}</td>
+                <td className="border px-2 py-1">{p.description}</td>
+                <td className="border px-2 py-1">{p.grade}</td>
+                <td className="border px-2 py-1">{p.ml}</td>
+                <td className="border px-2 py-1 text-right">
+                  ${Number(p.unit_price).toFixed(2)}
                 </td>
-                <td className="border border-border px-2 py-1 text-right">
-                  {p.units_per_case}
-                </td>
-                <td className="border border-border px-2 py-1 text-right">
-                  {Number(p.case_price).toFixed(2)}
+                <td className="border px-2 py-1 text-right">{p.units_per_case}</td>
+                <td className="border px-2 py-1 text-right">
+                  ${Number(p.case_price).toFixed(2)}
                 </td>
               </tr>
             ))}
-          </tbody>
+          </React.Fragment>
+        ))}
+      </tbody>
         </table>
       </div>
     </div>

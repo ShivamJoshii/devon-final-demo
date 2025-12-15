@@ -71,7 +71,11 @@ export default function HomePage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <button className="px-4 py-2 rounded bg-primary text-primary-foreground hover:opacity-90">
+        <button
+          type="submit"
+          onClick={addCustomer}
+          className="px-4 py-2 rounded bg-primary text-primary-foreground hover:opacity-90"
+        >
           Add
         </button>
       </form>

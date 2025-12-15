@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Insights from "./Insights";
 import { exportOrderPDF } from "@/lib/exportPdf";
@@ -45,6 +45,18 @@ export default function CustomerView({ customerId }) {
   // LAST 3 ORDERS
   // =====================
   const lastThreeOrders = useMemo(() => orders.slice(-3), [orders]);
+
+  const productsByCategory = useMemo(() => {
+    const map = {};
+
+    products.forEach((p) => {
+      const category = p.category || "Uncategorized";
+      if (!map[category]) map[category] = [];
+      map[category].push(p);
+    });
+
+    return map;
+  }, [products]);
 
   // =====================
   // UPDATE QTY
@@ -142,55 +154,76 @@ export default function CustomerView({ customerId }) {
           </thead>
 
           <tbody>
-            {products.map((p) => {
-              const pastValues = lastThreeOrders.map((o) => {
-                const item = items.find(
-                  (it) => it.order_id === o.id && it.product_id === p.id
-                );
-                return item ? item.quantity : "";
-              });
-
-              const qty = tempOrder[p.id] || 0;
-              const total = qty * Number(p.unit_price);
-
-              return (
-                <tr key={p.id}>
-                  <td className="border px-2 py-1">{p.item_code}</td>
-                  <td className="border px-2 py-1">{p.description}</td>
-                  <td className="border px-2 py-1">{p.grade}</td>
-                  <td className="border px-2 py-1">{p.ml}</td>
-                  <td className="border px-2 py-1">${p.unit_price}</td>
-                  <td className="border px-2 py-1">{p.units_per_case}</td>
-                  <td className="border px-2 py-1">${p.case_price}</td>
-
-                  {pastValues.map((v, i) => (
-                    <td key={i} className="border px-2 py-1 text-center">
-                      {v}
-                    </td>
-                  ))}
-
-                  {creating && (
-                    <>
-                      <td className="border px-2 py-1 bg-green-50 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          value={qty}
-                          onChange={(e) =>
-                            updateQuantity(p.id, e.target.value)
-                          }
-                          className="w-16 border px-1 py-1 text-center"
-                        />
-                      </td>
-
-                      <td className="border px-2 py-1 bg-green-50 text-center">
-                        {qty > 0 ? `$${total.toFixed(2)}` : ""}
-                      </td>
-                    </>
-                  )}
+            {Object.entries(productsByCategory).map(([category, categoryItems]) => (
+              <React.Fragment key={category}>
+                {/* CATEGORY HEADER */}
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="bg-muted font-semibold text-sm px-3 py-2 border border-border"
+                  >
+                    {category}
+                  </td>
                 </tr>
-              );
-            })}
+
+                {/* PRODUCTS UNDER CATEGORY */}
+                {categoryItems.map((p) => {
+                  const pastValues = lastThreeOrders.map((o) => {
+                    const item = items.find(
+                      (it) => it.order_id === o.id && it.product_id === p.id
+                    );
+                    return item ? item.quantity : "";
+                  });
+
+                  const qty = tempOrder[p.id] || 0;
+                  const total = qty * Number(p.unit_price);
+
+                  return (
+                    <tr key={p.id} className="hover:bg-muted/50">
+                      <td className="border px-2 py-1">{p.item_code}</td>
+                      <td className="border px-2 py-1">{p.description}</td>
+                      <td className="border px-2 py-1">{p.grade}</td>
+                      <td className="border px-2 py-1">{p.ml}</td>
+                      <td className="border px-2 py-1 text-right">
+                        ${Number(p.unit_price).toFixed(2)}
+                      </td>
+                      <td className="border px-2 py-1 text-right">
+                        {p.units_per_case}
+                      </td>
+                      <td className="border px-2 py-1 text-right">
+                        ${Number(p.case_price).toFixed(2)}
+                      </td>
+
+                      {pastValues.map((v, i) => (
+                        <td key={i} className="border px-2 py-1 text-center">
+                          {v}
+                        </td>
+                      ))}
+
+                      {creating && (
+                        <>
+                          <td className="border px-2 py-1 bg-green-50 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              value={qty}
+                              onChange={(e) =>
+                                updateQuantity(p.id, e.target.value)
+                              }
+                              className="w-16 border px-1 py-1 text-center"
+                            />
+                          </td>
+
+                          <td className="border px-2 py-1 bg-green-50 text-center">
+                            {qty > 0 ? `$${total.toFixed(2)}` : ""}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </tbody>
         </table>
 
@@ -218,4 +251,6 @@ export default function CustomerView({ customerId }) {
     </div>
   );
 }
+
+
 
